@@ -55,25 +55,40 @@ def get_device():
 
 if __name__ == "__main__":
 
+    savemodel = False 
+    loadmodel = True
+
+    if savemodel and loadmodel:
+        raise Exception("Can't load model and save it again...")
+    
+
     device = get_device()
 
     NN = Denoise_Model()
     NN.to(device)
 
-    # create training data
-    BATCH_SIZE=1
-    dataset = myDataset(device, N=1000)
-    dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+    if loadmodel:
+        NN.load_state_dict(torch.load("./models/model.pth", weights_only=True))
+        NN.eval()
+    else:
+        # create training data
+        BATCH_SIZE=1
+        dataset = myDataset(device, N=10000)
+        dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
-    # create some more data for testing
-    testdataset = myDataset(device)
-    testdataloader = DataLoader(testdataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
+        # create some more data for testing
+        testdataset = myDataset(device)
+        testdataloader = DataLoader(testdataset, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
-    loss_fn = nn.MSELoss()
-    optimizer = torch.optim.Adam(NN.parameters(), lr=1e-4)
-    train(NN, dataloader, testdataloader, 10, loss_fn, optimizer, device=device)
+        loss_fn = nn.MSELoss()
+        optimizer = torch.optim.Adam(NN.parameters(), lr=1e-4)
+        train(NN, dataloader, testdataloader, 10, loss_fn, optimizer, device=device)
 
+        # save model
+        if savemodel:
+            torch.save(NN.state_dict(), "./models/model.pth")
 
     # try model on example image
     test_image(NN, "./test_data/m33.fit", device=device)
-
+    test_image(NN, "./test_data/ngc6888.fit", device=device)
+    plt.show()

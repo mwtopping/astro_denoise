@@ -16,7 +16,7 @@ class myDataset(Dataset):
         self.device = device
 
         for ii in range(N):
-            img, fine_img = make_img(np.random.randint(0, 8), 64)
+            img, fine_img = make_img(np.random.randint(0, 32), 64)
 
             img, nimg = add_noise(img, fine_img, amount=np.random.uniform(1, 3))
 
