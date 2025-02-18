@@ -4,7 +4,6 @@ from astropy.visualization import ZScaleInterval
 from astropy.io import fits
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-import torchvision
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
