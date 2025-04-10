@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
+from glob import glob
+
 from visualize_results import *
 from train_model import *
 from generate_training_data import *
@@ -13,17 +15,19 @@ class Denoise_Model(nn.Module):
         super().__init__()
 
         self.conv1 = nn.Conv2d(1, 16, kernel_size=3, padding=1)
-        self.lin1 = nn.ReLU()
+        self.lin1 = nn.GELU()
         self.conv2 = nn.Conv2d(16, 32, kernel_size=3, padding=1)
-        self.lin2 = nn.ReLU()
-#        self.conv3 = nn.Conv2d(8, 4, kernel_size=3)
-#        self.lin3 = nn.ReLU()
-#        self.pool= nn.AvgPool2d(kernel_size=2, stride=2)
-#        self.unpool= nn.MaxUnpool2d(kernel_size=2, stride=2)
-        self.dconv1 = nn.ConvTranspose2d(32, 32, kernel_size=3, stride=1, padding=1)
-        self.lin2 = nn.ReLU()
-        self.dconv2 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=1, padding=1)
-        self.lin3 = nn.ReLU()
+        self.lin2 = nn.GELU()
+        self.conv3 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.lin3 = nn.GELU()
+
+
+        self.dconv1 = nn.ConvTranspose2d(64, 32, kernel_size=3, stride=1, padding=1)
+        self.lin4 = nn.GELU()
+        self.dconv2 = nn.ConvTranspose2d(32, 32, kernel_size=3, stride=1, padding=1)
+        self.lin5 = nn.GELU()
+        self.dconv3 = nn.ConvTranspose2d(32, 16, kernel_size=3, stride=1, padding=1)
+        self.lin6 = nn.GELU()
         self.out = nn.Conv2d(16, 1, kernel_size=3, padding=1)
 
 
@@ -34,12 +38,17 @@ class Denoise_Model(nn.Module):
         xsave = x
         x = self.conv2(x)
         x = self.lin2(x)
+        x = self.conv3(x)
+        x = self.lin3(x)
+
         x = self.dconv1(x)
-        x = self.lin2(x)
+        x = self.lin4(x)
         x = self.dconv2(x)
+        x = self.lin5(x)
+        x = self.dconv3(x)
 
         x += xsave
-        x = self.lin3(x)
+        x = self.lin6(x)
 
         return self.out(x)
 
@@ -52,11 +61,9 @@ def get_device():
         return torch.device("mps")
     return torch.device("cpu")
 
-
-if __name__ == "__main__":
-
+def get_model():
     savemodel = False 
-    loadmodel = True
+    loadmodel =True 
 
     if savemodel and loadmodel:
         raise Exception("Can't load model and save it again...")
@@ -88,7 +95,18 @@ if __name__ == "__main__":
         if savemodel:
             torch.save(NN.state_dict(), "./models/model.pth")
 
+
+    
+    return NN, device
+
+if __name__ == "__main__":
+
+    NN, device = get_model()
+
     # try model on example image
-    test_image(NN, "./test_data/m33.fit", device=device)
-    test_image(NN, "./test_data/ngc6888.fit", device=device)
+    files = glob("./m33/*.fit")
+
+    test_image(NN, files[6], device=device)
+#    test_image(NN, "./test_data/m33.fit", device=device)
+
     plt.show()

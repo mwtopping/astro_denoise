@@ -24,13 +24,13 @@ def get_mask(pad):
     return newimg
 
 
-def process_full_image(model, image, size, device):
+def process_full_image(model, image, size, device, blend=0.3):
     image_shape = np.shape(image)
-
+    
     new_img = np.zeros_like(image).astype(np.float32)
     mask = np.zeros_like(image).astype(np.float32)
 
-    ii = 1
+    ii = 0
     pad = 2
 
     Nxtiles = range(0, image_shape[0]-size, int(size/2))
@@ -88,10 +88,13 @@ def process_full_image(model, image, size, device):
     fig, ax = plt.subplots(1, 3, sharex=True, sharey=True, figsize=(12, 5))
     limits = ZScaleInterval().get_limits(image)
 
+    final_image = (blend*image + (1-blend)*new_img)
+
     # show varios versions of the image
     ax[0].imshow(image, vmin=limits[0], vmax=limits[1], cmap='Greys_r')
     ax[1].imshow(new_img, vmin=limits[0], vmax=limits[1], cmap='Greys_r')
-    ax[2].imshow((0.3*image+0.7*new_img), vmin=limits[0], vmax=limits[1], cmap='Greys_r')
+    ax[2].imshow(final_image, vmin=limits[0], vmax=limits[1], cmap='Greys_r')
+
 
     # plotting parameters
     ax[0].set_ylabel("Pixel")
@@ -103,14 +106,20 @@ def process_full_image(model, image, size, device):
 
 
 
-    return
+    return final_image
 
 
 
-def test_image(model, image_filename, tile_size=64, device=torch.device("cpu")):
+def test_image(model, image_filename, tile_size=64, device=torch.device("cpu"), OUT_DIR="./output/"):
+    
     model.eval()
     data = fits.getdata(image_filename)
-    process_full_image(model, data, tile_size, device)
+    new_img = process_full_image(model, data, tile_size, device)
+    # save the image as fits
+    image_fname = image_filename.split("/")[-1]    
+
+    fits.writeto(OUT_DIR+image_fname.replace(".fit", "_denoised.fits"), new_img, overwrite=True)
+
     model.train()
 
 
