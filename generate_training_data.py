@@ -14,6 +14,7 @@ def make_img(Npoints, size):
                        y,
                       s,s,size)
         fine_img += gauss2d(x,y,0.85*s,0.85*s,size)
+        #fine_img += gauss2d(x,y,s,s,size)
 
 
     return img, fine_img
